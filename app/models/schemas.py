@@ -15,6 +15,7 @@ class QueryRequest(BaseModel):
 class Source(BaseModel):
     content: str
     page: int
+    section: str
     document_id: str
 
 

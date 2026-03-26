@@ -7,9 +7,13 @@ from app.config import settings
 from app.models.schemas import QueryResponse, Source
 
 
-PROMPT_TEMPLATE = """You are an assistant that answers questions based strictly on the provided context.
-If the answer is not in the context, say "I couldn't find that information in the provided document."
-Do not make up information.
+PROMPT_TEMPLATE = """You are a precise assistant that answers questions based strictly on the provided context.
+
+Rules:
+- Answer only what is explicitly stated in the context.
+- Pay attention to section labels (e.g. "Projects", "Experience", "Education") to correctly categorize information.
+- Do not mix information from different sections.
+- If the answer is not clearly present in the context, say "I couldn't find that information in the provided document."
 
 Context:
 {context}
@@ -65,8 +69,9 @@ def query(question: str, document_id: str | None = None) -> QueryResponse:
     # 5. Build sources list for the response
     sources = [
         Source(
-            content=doc.page_content[:200],  # preview of the chunk
+            content=doc.page_content[:200],
             page=doc.metadata.get("page", 0),
+            section=doc.metadata.get("section", ""),
             document_id=doc.metadata.get("document_id", ""),
         )
         for doc in results

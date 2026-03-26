@@ -37,11 +37,14 @@ async def query_documents(request: QueryRequest):
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
-    return retrieval.query(
-        question=request.question,
-        document_id=request.document_id,
-        history=request.history,
-    )
+    try:
+        return retrieval.query(
+            question=request.question,
+            document_id=request.document_id,
+            history=request.history,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/documents", response_model=list[DocumentInfo])

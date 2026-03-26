@@ -1,37 +1,70 @@
 # RAG PDF Chatbot
 
-A production-ready Retrieval-Augmented Generation (RAG) API that lets you upload PDFs and ask questions about their content.
+A production-ready **Retrieval-Augmented Generation (RAG)** application that lets you upload PDFs and have a contextual conversation about their content.
 
-Built with **LangChain**, **Claude (Anthropic)**, **ChromaDB**, and **FastAPI**. Fully containerized with Docker.
+Upload multiple documents, ask questions, and get accurate answers grounded in your files — with source attribution showing exactly which section each answer came from.
+
+> **Live demo:** [coming soon — deploy in progress]
+
+---
+
+## Features
+
+- **Multi-document support** — upload multiple PDFs and query them individually or all at once
+- **Conversation history** — follow-up questions work naturally ("tell me more about the first one")
+- **Section-aware chunking** — detects document headings by font size to keep related content together
+- **Source attribution** — every answer shows which section and page it came from
+- **Chat interface** — clean browser UI, no Postman required
+- **REST API** — fully documented at `/docs` (OpenAPI/Swagger)
+
+---
 
 ## How it works
 
 ```
-PDF upload → text extraction → chunking → embeddings (local) → ChromaDB
-                                                                    ↓
-Question → embed question → similarity search → top-K chunks → Claude → Answer
+PDF upload
+    ↓
+Font-size analysis → heading detection → section-aware chunks
+    ↓
+Local embeddings (BAAI/bge-small-en-v1.5 via fastembed)
+    ↓
+ChromaDB (persistent vector store)
+
+─────────────────────────────────────────
+
+User question
+    ↓
+Embed question → similarity search → top-6 most relevant chunks
+    ↓
+Prompt: system instructions + conversation history + context + question
+    ↓
+Groq LLM (llama-3.1-8b-instant)
+    ↓
+Answer + sources
 ```
 
-1. **Ingest**: PDF is split into overlapping chunks (~500 tokens each), embedded using a local Sentence Transformers model, and stored in ChromaDB.
-2. **Query**: The question is embedded and compared against all stored chunks. The top-4 most relevant chunks are retrieved and passed as context to Claude, which generates a grounded answer.
+---
 
 ## Tech stack
 
 | Layer | Technology |
 |---|---|
-| API | FastAPI |
-| LLM | Claude 3.5 Haiku (Anthropic) |
-| Embeddings | `all-MiniLM-L6-v2` (Sentence Transformers, runs locally) |
-| Vector DB | ChromaDB (persistent, local) |
-| Framework | LangChain |
-| Deployment | Docker / Docker Compose |
+| **Backend** | FastAPI |
+| **LLM** | Llama 3.1 8B via [Groq](https://groq.com) |
+| **Embeddings** | `BAAI/bge-small-en-v1.5` (fastembed, runs locally) |
+| **Vector DB** | ChromaDB (persistent) |
+| **Orchestration** | LangChain |
+| **Frontend** | Vanilla HTML/CSS/JS served by FastAPI |
+| **Deployment** | Docker / Docker Compose |
+
+---
 
 ## Getting started
 
 ### Prerequisites
 
 - Docker and Docker Compose
-- An [Anthropic API key](https://console.anthropic.com)
+- A free [Groq API key](https://console.groq.com)
 
 ### Setup
 
@@ -40,7 +73,7 @@ git clone https://github.com/tiagorcfortunato/rag-pdf-chatbot.git
 cd rag-pdf-chatbot
 
 cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
+# Edit .env and set your GROQ_API_KEY
 ```
 
 ### Run
@@ -49,24 +82,27 @@ cp .env.example .env
 docker-compose up --build
 ```
 
-The API will be available at `http://localhost:8000`.
+- **Chat UI:** `http://localhost:8000`
+- **API docs:** `http://localhost:8000/docs`
 
-Interactive docs at `http://localhost:8000/docs`.
+First run downloads the embedding model (~80MB). Subsequent starts are instant.
 
-## API
+---
+
+## API reference
 
 ### Upload a PDF
 
 ```bash
 curl -X POST http://localhost:8000/api/upload \
-  -F "file=@your-document.pdf"
+  -F "file=@document.pdf"
 ```
 
 ```json
 {
   "document_id": "a1b2c3d4-...",
-  "filename": "your-document.pdf",
-  "chunks_count": 42
+  "filename": "document.pdf",
+  "chunks_count": 18
 }
 ```
 
@@ -75,50 +111,63 @@ curl -X POST http://localhost:8000/api/upload \
 ```bash
 curl -X POST http://localhost:8000/api/query \
   -H "Content-Type: application/json" \
-  -d '{"question": "What is the main topic of the document?", "document_id": "a1b2c3d4-..."}'
+  -d '{
+    "question": "What are the main topics covered?",
+    "document_id": "a1b2c3d4-...",
+    "history": []
+  }'
 ```
 
 ```json
 {
-  "answer": "The document is about ...",
+  "answer": "The document covers...",
   "sources": [
     {
-      "content": "Relevant chunk preview...",
-      "page": 3,
+      "content": "chunk preview...",
+      "page": 2,
+      "section": "Introduction",
       "document_id": "a1b2c3d4-..."
     }
   ]
 }
 ```
 
-### List uploaded documents
+### List documents
 
 ```bash
 curl http://localhost:8000/api/documents
 ```
+
+---
 
 ## Project structure
 
 ```
 app/
 ├── api/
-│   └── routes.py        # API endpoints
+│   └── routes.py          # Upload, query, list endpoints
 ├── services/
-│   ├── ingestion.py     # PDF → chunks → ChromaDB
-│   └── retrieval.py     # question → search → Claude → answer
+│   ├── ingestion.py        # PDF → section-aware chunks → ChromaDB
+│   ├── retrieval.py        # question + history → search → LLM → answer
+│   └── embeddings.py       # FastEmbeddings wrapper (fastembed)
 ├── models/
-│   └── schemas.py       # Pydantic request/response models
-├── config.py            # Settings from .env
-└── main.py              # FastAPI app
+│   └── schemas.py          # Pydantic request/response models
+├── static/
+│   └── index.html          # Chat UI
+├── config.py               # Settings loaded from .env
+└── main.py                 # FastAPI app + static file serving
 ```
+
+---
 
 ## Configuration
 
 | Variable | Default | Description |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | required | Your Anthropic API key |
-| `CLAUDE_MODEL` | `claude-3-5-haiku-20241022` | Claude model to use |
-| `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | Sentence Transformers model |
-| `CHUNK_SIZE` | `500` | Tokens per chunk |
-| `CHUNK_OVERLAP` | `50` | Overlap between chunks |
-| `RETRIEVAL_K` | `4` | Number of chunks retrieved per query |
+| `GROQ_API_KEY` | required | Your Groq API key (free at console.groq.com) |
+| `LLM_MODEL` | `llama-3.1-8b-instant` | Groq model to use |
+| `EMBEDDING_MODEL` | `BAAI/bge-small-en-v1.5` | Local embedding model |
+| `CHROMA_PATH` | `./chroma_db` | ChromaDB persistence directory |
+| `CHUNK_SIZE` | `500` | Max characters per chunk (fallback for large sections) |
+| `CHUNK_OVERLAP` | `50` | Overlap between fallback chunks |
+| `RETRIEVAL_K` | `6` | Number of chunks retrieved per query |

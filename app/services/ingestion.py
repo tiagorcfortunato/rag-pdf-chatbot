@@ -4,13 +4,12 @@ from pathlib import Path
 import fitz  # PyMuPDF
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
-
 from app.config import settings
+from app.services.embeddings import FastEmbeddings
 
 
 def _get_vector_store() -> Chroma:
-    embeddings = HuggingFaceEmbeddings(model_name=settings.embedding_model)
+    embeddings = FastEmbeddings(model_name=settings.embedding_model)
     return Chroma(
         persist_directory=settings.chroma_path,
         embedding_function=embeddings,

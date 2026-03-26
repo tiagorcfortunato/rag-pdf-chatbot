@@ -2,9 +2,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    anthropic_api_key: str
-    claude_model: str = "claude-3-5-haiku-20241022"
-    embedding_model: str = "all-MiniLM-L6-v2"
+    groq_api_key: str
+    llm_model: str = "llama-3.1-8b-instant"
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
     chroma_path: str = "./chroma_db"
     chunk_size: int = 500
     chunk_overlap: int = 50

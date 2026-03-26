@@ -1,6 +1,6 @@
-from langchain_anthropic import ChatAnthropic
+from langchain_groq import ChatGroq
 from langchain_chroma import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from app.services.embeddings import FastEmbeddings
 from langchain.prompts import ChatPromptTemplate
 
 from app.config import settings
@@ -20,7 +20,7 @@ Answer:"""
 
 
 def _get_vector_store() -> Chroma:
-    embeddings = HuggingFaceEmbeddings(model_name=settings.embedding_model)
+    embeddings = FastEmbeddings(model_name=settings.embedding_model)
     return Chroma(
         persist_directory=settings.chroma_path,
         embedding_function=embeddings,
@@ -54,9 +54,9 @@ def query(question: str, document_id: str | None = None) -> QueryResponse:
 
     # 4. Assemble prompt and call Claude
     prompt = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-    llm = ChatAnthropic(
-        model=settings.claude_model,
-        api_key=settings.anthropic_api_key,
+    llm = ChatGroq(
+        model=settings.llm_model,
+        api_key=settings.groq_api_key,
     )
     chain = prompt | llm
 

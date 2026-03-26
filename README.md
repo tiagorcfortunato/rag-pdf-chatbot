@@ -1,5 +1,7 @@
 # RAG PDF Chatbot
 
+![CI](https://github.com/tiagorcfortunato/rag-pdf-chatbot/actions/workflows/ci.yml/badge.svg)
+
 A production-ready **Retrieval-Augmented Generation (RAG)** application that lets you upload PDFs and have a contextual conversation about their content.
 
 Upload multiple documents, ask questions, and get accurate answers grounded in your files — with source attribution showing exactly which section each answer came from.

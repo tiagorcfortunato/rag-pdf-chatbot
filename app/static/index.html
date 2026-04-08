@@ -148,6 +148,8 @@
     .bubble p:last-child { margin-bottom: 0; }
     .bubble ul, .bubble ol { padding-left: 20px; margin-bottom: 8px; }
     .bubble li { margin-bottom: 4px; }
+    .bubble li.clickable-q { cursor: pointer; color: var(--primary); transition: opacity 0.15s; }
+    .bubble li.clickable-q:hover { opacity: 0.7; }
     .bubble strong { font-weight: 700; }
     .bubble em { font-style: italic; }
     .bubble code {
@@ -427,6 +429,9 @@
       conversationHistory.push({ role: 'user', content: question });
       conversationHistory.push({ role: 'assistant', content: fullText });
 
+      // Make list items that look like questions clickable
+      makeQuestionsClickable(bubble);
+
       // Append remaining suggestion chips below this answer
       const remaining = SUGGESTIONS.filter(s => !usedSuggestions.has(s));
       if (remaining.length > 0) {
@@ -515,6 +520,16 @@
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  function makeQuestionsClickable(bubble) {
+    bubble.querySelectorAll('li').forEach(li => {
+      const text = li.textContent.trim();
+      if (text.endsWith('?')) {
+        li.classList.add('clickable-q');
+        li.addEventListener('click', () => sendQuestion(text));
+      }
+    });
+  }
 
   function escapeHtml(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

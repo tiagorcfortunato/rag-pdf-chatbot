@@ -35,10 +35,14 @@ def _get_vector_store() -> Chroma:
 
 def _build_search_query(question: str, history: list[ChatMessage]) -> str:
     """
-    If there's conversation history, enrich the search query with recent context.
-    This helps resolve references like "tell me more about the first one".
+    If there's conversation history AND the query is short/ambiguous,
+    enrich the search query with recent context. This helps resolve
+    references like "tell me more about the first one".
+
+    Specific queries (5+ words) are not enriched — prepending long
+    prior answers would dilute the actual search intent.
     """
-    if not history:
+    if not history or len(question.split()) >= 5:
         return question
     last_exchange = history[-2:] if len(history) >= 2 else history
     context = " ".join(m.content for m in last_exchange)

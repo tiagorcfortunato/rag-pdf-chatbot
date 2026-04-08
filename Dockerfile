@@ -13,8 +13,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 COPY tests/ ./tests/
 
+# Bake the knowledge base into the image so it auto-ingests on cold start
+COPY data/knowledge_base.md ./data/knowledge_base.md
+
 # Create directories for volumes
-RUN mkdir -p data chroma_db
+RUN mkdir -p chroma_db
 
 EXPOSE 8000
 

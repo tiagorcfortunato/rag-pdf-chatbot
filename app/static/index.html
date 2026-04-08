@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RAG PDF Chatbot</title>
+  <title>Tiago Fortunato — Career Assistant</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -260,57 +260,25 @@
   <!-- Header -->
   <div class="header">
     <div class="header-title">
-      <h1>RAG PDF Chatbot</h1>
-      <p>Upload PDFs and ask questions about their content</p>
+      <h1>Tiago Fortunato — Career Assistant</h1>
+      <p>Ask me anything about Tiago's experience, projects, and skills</p>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span class="upload-progress" id="uploadProgress">Uploading...</span>
-      <label class="upload-label">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-          <polyline points="17 8 12 3 7 8"/>
-          <line x1="12" y1="3" x2="12" y2="15"/>
-        </svg>
-        Upload PDF
-        <input type="file" accept=".pdf" onchange="uploadFile(this)" />
-      </label>
-    </div>
-  </div>
-
-  <!-- Document selector bar -->
-  <div class="doc-bar" id="docBar">
-    <span class="doc-bar-label">Ask about:</span>
-    <div class="doc-pill all-pill active" id="allPill" onclick="selectDoc(null)">
-      All documents
-    </div>
-    <!-- document pills injected here -->
   </div>
 
   <!-- Messages -->
   <div class="messages" id="messages">
-    <div class="empty-state" id="emptyState">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-        <polyline points="10 9 9 9 8 9"/>
-      </svg>
-      <p>Upload a PDF to start chatting</p>
-    </div>
   </div>
 
   <!-- Input -->
   <div class="input-area">
     <textarea
       id="questionInput"
-      placeholder="Ask a question about your document..."
+      placeholder="Ask about Tiago's experience, skills, or projects..."
       rows="1"
-      disabled
       onkeydown="handleKey(event)"
       oninput="autoResize(this)"
     ></textarea>
-    <button class="send-btn" id="sendBtn" onclick="sendQuestion()" disabled>
+    <button class="send-btn" id="sendBtn" onclick="sendQuestion()">
       <svg width="18" height="18" viewBox="0 0 24 24">
         <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
       </svg>
@@ -320,96 +288,14 @@
 </div>
 
 <script>
-  // documents: array of { document_id, filename, chunks_count }
-  let documents = [];
-  let selectedDocumentId = null; // null = all documents
   let conversationHistory = [];
 
-  // ── Upload ──────────────────────────────────────────────────────────────────
+  // ── Init ────────────────────────────────────────────────────────────────────
 
-  async function uploadFile(input) {
-    const file = input.files[0];
-    if (!file) return;
-
-    document.getElementById('uploadProgress').style.display = 'block';
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const res  = await fetch('/api/upload', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Upload failed');
-
-      // Add to documents list and select it
-      documents.push({ document_id: data.document_id, filename: data.filename, chunks_count: data.chunks_count });
-      renderDocBar();
-      selectDoc(data.document_id);
-
-      document.getElementById('questionInput').disabled = false;
-      document.getElementById('sendBtn').disabled = false;
-      document.getElementById('questionInput').focus();
-
-      hideEmptyState();
-      addMessage('bot', `**${data.filename}** uploaded — ${data.chunks_count} chunks indexed. What would you like to know?`);
-
-    } catch (err) {
-      addMessage('bot', `Upload failed: ${err.message}`);
-    } finally {
-      document.getElementById('uploadProgress').style.display = 'none';
-      input.value = '';
-    }
-  }
-
-  // ── Document bar ────────────────────────────────────────────────────────────
-
-  function renderDocBar() {
-    const bar = document.getElementById('docBar');
-    bar.classList.toggle('visible', documents.length > 0);
-
-    // Remove old doc pills (keep "All" pill)
-    bar.querySelectorAll('.doc-pill:not(.all-pill)').forEach(el => el.remove());
-
-    documents.forEach(doc => {
-      const pill = document.createElement('div');
-      pill.className = 'doc-pill';
-      pill.dataset.id = doc.document_id;
-      pill.innerHTML = `
-        <span class="pill-name" title="${doc.filename}">📄 ${doc.filename}</span>
-        <span class="remove-doc" onclick="removeDoc(event, '${doc.document_id}')" title="Remove">×</span>`;
-      pill.addEventListener('click', () => selectDoc(doc.document_id));
-      bar.appendChild(pill);
-    });
-
-    updateActivePill();
-  }
-
-  function selectDoc(docId) {
-    selectedDocumentId = docId;
-    conversationHistory = []; // reset history on context switch
-    updateActivePill();
-  }
-
-  function updateActivePill() {
-    document.getElementById('allPill').classList.toggle('active', selectedDocumentId === null);
-    document.querySelectorAll('.doc-pill:not(.all-pill)').forEach(pill => {
-      pill.classList.toggle('active', pill.dataset.id === selectedDocumentId);
-    });
-  }
-
-  function removeDoc(event, docId) {
-    event.stopPropagation();
-    documents = documents.filter(d => d.document_id !== docId);
-    if (selectedDocumentId === docId) selectDoc(null);
-    renderDocBar();
-
-    if (documents.length === 0) {
-      document.getElementById('questionInput').disabled = true;
-      document.getElementById('sendBtn').disabled = true;
-      document.getElementById('messages').innerHTML = '';
-      showEmptyState();
-    }
-  }
+  window.addEventListener('DOMContentLoaded', () => {
+    addMessage('bot', "Hi! I'm Tiago's career assistant. Ask me anything about his experience, projects, or technical skills — I'm here to help you get to know him better.\n\nSome things you can ask:\n- **What projects has Tiago built?**\n- **What is his AI/ML experience?**\n- **Tell me about his MSc thesis.**\n- **What is his tech stack?**");
+    document.getElementById('questionInput').focus();
+  });
 
   // ── Query ───────────────────────────────────────────────────────────────────
 
@@ -432,7 +318,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question,
-          document_id: selectedDocumentId,
+          document_id: null,
           history: conversationHistory,
         }),
       });
@@ -517,22 +403,6 @@
   function hideEmptyState() {
     const el = document.getElementById('emptyState');
     if (el) el.remove();
-  }
-
-  function showEmptyState() {
-    const msgs = document.getElementById('messages');
-    const div = document.createElement('div');
-    div.className = 'empty-state';
-    div.id = 'emptyState';
-    div.innerHTML = `
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-      </svg>
-      <p>Upload a PDF to start chatting</p>`;
-    msgs.appendChild(div);
   }
 
   function handleKey(e) {

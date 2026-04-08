@@ -273,6 +273,16 @@
     .send-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
     .send-btn svg { fill: #fff; }
 
+    .clear-btn {
+      width: 36px; height: 36px;
+      background: none; border: 1.5px solid var(--border);
+      border-radius: 10px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .clear-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
     /* ── Scrollbar ──────────────────────────────────────────────────── */
     .messages::-webkit-scrollbar { width: 4px; }
     .messages::-webkit-scrollbar-track { background: transparent; }
@@ -316,6 +326,11 @@
   <div class="messages" id="messages"></div>
 
   <div class="input-area">
+    <button class="clear-btn" onclick="clearChat()" title="New conversation">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 105.64-12.36L1 10"/>
+      </svg>
+    </button>
     <textarea
       id="questionInput"
       placeholder="Ask about Tiago's experience, projects, or skills..."
@@ -371,11 +386,12 @@
     usedSuggestions.add(question);
 
     addUserMessage(question);
-    const { bubble, sourcesEl } = addBotPlaceholder();
+    const typingEl = addTyping();
 
     let fullText = '';
     let sources = [];
     let buffer = '';
+    let bubble, sourcesEl;
 
     try {
       const res = await fetch('/api/query/stream', {
@@ -408,8 +424,14 @@
               sources = parsed.sources;
             }
             if (parsed.token) {
+              // Remove typing dots on first token
+              if (!bubble) {
+                typingEl.remove();
+                ({ bubble, sourcesEl } = addBotPlaceholder());
+              }
               fullText += parsed.token;
               bubble.innerHTML = marked.parse(fullText);
+              scrollToBottom();
             }
           } catch (_) {}
         }
@@ -463,6 +485,8 @@
       }
 
     } catch (err) {
+      typingEl.remove();
+      if (!bubble) ({ bubble, sourcesEl } = addBotPlaceholder());
       bubble.textContent = `Error: ${err.message}`;
     } finally {
       input.disabled = false;
@@ -507,6 +531,20 @@
       </div>`;
     msgs.appendChild(wrap);
     scrollToBottom();
+  }
+
+  function addTyping() {
+    const msgs = document.getElementById('messages');
+    const wrap = document.createElement('div');
+    wrap.className = 'message bot typing';
+    wrap.innerHTML = `
+      <div class="avatar">TF</div>
+      <div class="bubble">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>`;
+    msgs.appendChild(wrap);
+    scrollToBottom();
+    return wrap;
   }
 
   function addBotPlaceholder() {
@@ -555,6 +593,18 @@
         li.addEventListener('click', () => sendQuestion(text));
       }
     });
+  }
+
+  function clearChat() {
+    conversationHistory = [];
+    usedSuggestions.clear();
+    document.getElementById('messages').innerHTML = '';
+    addBotMessage(
+      "Hi! I'm Tiago's career assistant.\n\nAsk me anything about his experience, projects, or technical skills — I'm here to help you get to know him better.",
+      [],
+      true
+    );
+    document.getElementById('questionInput').focus();
   }
 
   function escapeHtml(str) {

@@ -110,6 +110,16 @@ Python, PyTorch, YOLOv8 (Ultralytics), Scikit-learn, Pandas, Linux, GPU-accelera
 
 ## Full-Stack & AI Projects
 
+### Projects Overview
+
+Tiago has built three main technical projects:
+
+1. **RAG Career Chatbot** (2026) — A production-deployed AI Career Assistant using Retrieval-Augmented Generation. Features streaming SSE responses, section-aware chunking, local embeddings (fastembed), history-enriched retrieval, and RAGAS evaluation. Built with FastAPI, LangChain, ChromaDB, Groq. Live at rag-pdf-chatbot-0w9z.onrender.com.
+
+2. **Inspection Management API** (2026) — A production-grade REST API for infrastructure inspection management with AI-powered multimodal damage classification using Groq Llama 3.2 11B Vision. Features JWT auth, role-based access control (user/admin), rate limiting, background AI processing, 4 Alembic migrations, and 31 Pytest tests. Built with FastAPI, PostgreSQL, SQLAlchemy, LangChain. Live API + React dashboard on Vercel.
+
+3. **Odys** (2026–present) — A WhatsApp-first scheduling SaaS for Brazilian freelance professionals, built entirely solo from architecture to production. Features self-service booking, automated WhatsApp reminders via self-hosted Evolution API, Stripe payments with PIX, multi-tenant architecture, pg_cron scheduled tasks. Built with Next.js, TypeScript, Supabase, Drizzle ORM. Live at odys.com.br.
+
 ### 1. RAG Career Chatbot (2026)
 
 **Repository:** github.com/tiagorcfortunato/rag-pdf-chatbot

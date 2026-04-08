@@ -485,9 +485,14 @@
     const sourcesEl = document.createElement('div');
     sourcesEl.className = 'sources';
 
+    const bubbleWrap = document.createElement('div');
+    bubbleWrap.style.display = 'flex';
+    bubbleWrap.style.flexDirection = 'column';
+
     wrap.innerHTML = `<div class="avatar">TF</div>`;
-    wrap.appendChild(bubble);
-    wrap.appendChild(sourcesEl);
+    bubbleWrap.appendChild(bubble);
+    bubbleWrap.appendChild(sourcesEl);
+    wrap.appendChild(bubbleWrap);
     msgs.appendChild(wrap);
     scrollToBottom();
 

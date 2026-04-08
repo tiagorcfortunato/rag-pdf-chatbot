@@ -452,22 +452,7 @@
       conversationHistory.push({ role: 'assistant', content: fullText });
 
       // Make list items that look like questions clickable
-      makeQuestionsClickable(bubble);
-
-      // Detect project-listing answers and add deep-dive chips
-      const projectChips = detectProjectAnswer(fullText);
-      if (projectChips.length > 0) {
-        const pChips = document.createElement('div');
-        pChips.className = 'chips';
-        projectChips.forEach(q => {
-          const btn = document.createElement('button');
-          btn.className = 'chip';
-          btn.textContent = q;
-          btn.onclick = () => sendQuestion(q);
-          pChips.appendChild(btn);
-        });
-        sourcesEl.after(pChips);
-      }
+      makeItemsClickable(bubble);
 
       // Append remaining suggestion chips below this answer
       const remaining = SUGGESTIONS.filter(s => !usedSuggestions.has(s));
@@ -574,23 +559,23 @@
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
-  function detectProjectAnswer(text) {
-    const lower = text.toLowerCase();
-    const chips = [];
-    if (lower.includes('rag') && lower.includes('odys') || lower.includes('three main projects') || lower.includes('three projects')) {
-      if (lower.includes('rag'))        chips.push('Tell me more about the RAG Career Chatbot');
-      if (lower.includes('inspection')) chips.push('Tell me more about the Inspection Management API');
-      if (lower.includes('odys'))       chips.push('Tell me more about Odys');
-    }
-    return chips;
-  }
-
-  function makeQuestionsClickable(bubble) {
+  function makeItemsClickable(bubble) {
     bubble.querySelectorAll('li').forEach(li => {
       const text = li.textContent.trim();
+
+      // Questions ending with ? → send as question
       if (text.endsWith('?')) {
         li.classList.add('clickable-q');
         li.addEventListener('click', () => sendQuestion(text));
+        return;
+      }
+
+      // Project names in bold → "Tell me more about X"
+      const bold = li.querySelector('strong');
+      if (bold) {
+        const name = bold.textContent.replace(/:$/, '').trim();
+        li.classList.add('clickable-q');
+        li.addEventListener('click', () => sendQuestion(`Tell me more about ${name}`));
       }
     });
   }

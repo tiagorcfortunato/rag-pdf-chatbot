@@ -14,10 +14,8 @@ COPY app/ ./app/
 COPY tests/ ./tests/
 
 COPY data/knowledge_base.md ./data/knowledge_base.md
-COPY data/Tiago_Fortunato_Expert_System_Road_Hazard_Detection.pdf ./data/Tiago_Fortunato_Expert_System_Road_Hazard_Detection.pdf
 
-# Pre-ingest knowledge base at build time (lightweight, fits in memory)
-# Thesis PDF is ingested at runtime startup (too large for build-time on t3.micro)
+# Pre-ingest knowledge base at build time so there's no memory spike at runtime
 RUN GROQ_API_KEY=build-placeholder python -c "\
 from app.services.ingestion import ingest_markdown; \
 from pathlib import Path; \

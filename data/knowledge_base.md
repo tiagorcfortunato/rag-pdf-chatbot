@@ -21,21 +21,7 @@ His technical focus spans **AI application engineering** (RAG pipelines, compute
 
 **Languages:** Portuguese (native), English (fluent), German (B2.2, actively improving)
 
-**Available for:** Full-Stack or Backend Developer roles in Berlin or remote. Actively pursuing the Founding Product & AI Engineer role at FIDgate.
-
----
-
-## Why FIDgate
-
-FIDgate is building autonomous optimization systems to replace manual, Excel-based energy decisions. This problem resonates directly with Tiago's work: his MSc thesis was architecturally identical — replacing manual road inspection and maintenance decisions with a hybrid ML + rule-based expert system. The pattern is the same: perception/detection layer → reasoning/prioritization layer → automated, traceable decisions. He has built this from scratch.
-
-**What Tiago brings to FIDgate specifically:**
-- Can turn an existing Python API into a clean, developer-facing platform — demonstrated with the Inspection Management API (JWT auth, filtering, pagination, sorting, full OpenAPI docs)
-- Has shipped AI/LLM features in production — RAG chatbot with full pipeline (embeddings, vector search, conversation history, source attribution)
-- Has founding-team experience — built and launched Odys entirely solo, from market research to production
-- Python + TypeScript across the full stack
-- High autonomy — does not need to be managed, figures out what matters and builds it
-- Based in Berlin, aligned with FIDgate's HQ location
+**Available for:** Full-Stack or Backend Developer roles in Berlin or remote.
 
 ---
 
@@ -43,7 +29,7 @@ FIDgate is building autonomous optimization systems to replace manual, Excel-bas
 
 ### MSc Thesis Overview
 
-Tiago's MSc thesis is titled *"Expert System for Road Surface Hazard Detection: A Deep Learning-Based Detection and Maintenance Prioritization Pipeline"*, submitted in February 2026 at the University of Europe for Applied Sciences, Berlin. It presents a modular two-component pipeline: a YOLOv8 object detection model identifies road surface defects (potholes, cracks) from monocular images, and a deterministic rule-based expert system assigns maintenance priority levels (Low / Medium / High) based on defect type, confidence scores, and detection count. Best result: mAP50 of 0.663 with YOLOv8s, with post-processing reducing noisy detections by 31.2%. The architecture separates perception from reasoning, allowing decision logic to be updated without retraining the model. This is directly analogous to FIDgate's autonomous optimization system — replacing manual judgment with automated, traceable reasoning on top of a detection/modelling layer.
+Tiago's MSc thesis is titled *"Expert System for Road Surface Hazard Detection: A Deep Learning-Based Detection and Maintenance Prioritization Pipeline"*, submitted in February 2026 at the University of Europe for Applied Sciences, Berlin. It presents a modular two-component pipeline: a YOLOv8 object detection model identifies road surface defects (potholes, cracks) from monocular images, and a deterministic rule-based expert system assigns maintenance priority levels (Low / Medium / High) based on defect type, confidence scores, and detection count. Best result: mAP50 of 0.663 with YOLOv8s, with post-processing reducing noisy detections by 31.2%. The architecture separates perception from reasoning, allowing decision logic to be updated without retraining the model. This pattern — automated, traceable reasoning on top of a detection/modelling layer — is applicable to any domain where manual judgment needs to be replaced with systematic optimization.
 
 ### MSc Thesis — Expert System for Road Surface Hazard Detection
 
@@ -454,16 +440,6 @@ It's less of a transition and more of a completion. As a project manager Tiago w
 
 Mechanical engineering gave Tiago systems thinking. He was always more interested in how things work together than in the physical components. Software is the same problem at a different layer. And in software you can ship something in weeks that would take years in physical engineering. The leverage is completely different.
 
-### Why FIDgate
-
-**"Why do you want to work at FIDgate?"**
-
-Three things that rarely come together. First, the domain — Tiago originally studied renewable energy during his mechanical engineering degree, and always wanted to work on meaningful problems in that space. Second, the level of ownership — he's not looking for a role where he just implements tickets, he wants to own real problems end to end. Third, the problem itself — critical energy decisions are still made using static models, and building a system that continuously optimizes those decisions in real time is both technically challenging and has real-world impact. That combination is what makes this opportunity very compelling.
-
-**"You have no energy industry experience. How would you contribute?"**
-
-Tiago's role is to bring strong engineering and product thinking to make the system usable, reliable, and scalable — that part is domain-agnostic. He would close the domain gap quickly by working closely with the modelling team and early users. His mechanical engineering background in renewable energy gives him a starting point — he's not learning the domain from zero. But the real value he brings is on the engineering and product side.
-
 ### About Odys in Depth
 
 **"What was the hardest part of building Odys?"**
@@ -480,10 +456,6 @@ The most natural place is the booking flow. Freelancers receive messages like "c
 
 ### About the RAG Pipeline
 
-**"How does the RAG work apply to FIDgate?"**
-
-FIDgate's engine produces results — optimal configurations, revenue projections, dispatch strategies. But the energy professional needs to understand why a specific configuration is optimal before committing millions of euros to it. That's the same problem Tiago worked on: making complex model outputs trustworthy and interpretable. He would build an AI layer that explains the engine's reasoning in plain language — not just "this configuration has the highest IRR" but "this configuration outperforms because of these specific market conditions and site constraints."
-
 **"What are the limitations of RAG systems?"**
 
 Four main ones: (1) Retrieval quality — if the relevant context isn't retrieved, the answer fails regardless of the model; (2) Hallucinations — even with the right context, the model can generate incorrect responses; (3) Latency and cost — combining retrieval and generation adds overhead at scale; (4) Evaluation is hard — it's not always obvious how to measure whether retrieval is improving.
@@ -498,19 +470,19 @@ For any workflow involving external systems, Tiago would introduce background jo
 
 His daily setup is Claude Code and Gemini inside Cursor. He writes deliberate prompts, reviews every suggestion critically, and only ships what he actually understands. He doesn't use AI to generate code he can't explain. It lets him move at founder speed without sacrificing quality — but the architectural decisions are always his.
 
-### About the FIDgate Role Specifically
-
-**"How would you turn the decision engine into a platform developers want to use?"**
-
-First, talk to early adopters to understand how they're actually using the engine and where the current API creates friction. Then focus on three areas: (1) API design — clear versioning, predictable response structures, meaningful error handling; (2) Developer experience — documentation based on real workflows, not just endpoints; (3) Reliability — rate limiting, monitoring, clear latency/uptime expectations. On top of that, an AI layer focused on interpretability — helping users understand why the engine suggests a given configuration.
-
-**"What would you do in your first 30 days?"**
-
-Understanding before building, but not passively. Go deep into the decision engine, the current API, and how it's being used — run it locally, explore edge cases, try to break it from a developer's perspective. In parallel, talk to early adopters to understand what decisions they're trying to make and where the interface creates friction. Then identify one or two high-impact improvements and start implementing them before the end of the first month.
+### About the Role
 
 **"What does founder-level ownership mean to you?"**
 
 It means not waiting to be told where the problem is. Understanding the user, identifying what matters most, making decisions with incomplete information, and taking responsibility for the outcome — not just the implementation. Thinking beyond the code and treating the product as something you are fully accountable for.
+
+**"What would you do in your first 30 days at a new company?"**
+
+Understanding before building, but not passively. Go deep into the existing system, the current API, and how it's being used — run it locally, explore edge cases, try to break it from a developer's perspective. In parallel, talk to users to understand where the interface creates friction. Then identify one or two high-impact improvements and start implementing before the end of the first month.
+
+**"How would you turn an existing API into a platform developers want to use?"**
+
+First, talk to early adopters to understand friction. Then focus on three areas: (1) API design — clear versioning, predictable response structures, meaningful error handling; (2) Developer experience — documentation based on real workflows, not just endpoints; (3) Reliability — rate limiting, monitoring, clear latency/uptime expectations.
 
 ### Working Style and Availability
 

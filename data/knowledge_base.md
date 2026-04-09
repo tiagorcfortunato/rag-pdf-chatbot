@@ -6,7 +6,7 @@
 
 ## About Tiago
 
-Tiago Fortunato is a **Full-Stack Developer and Founder** based in **Berlin, Germany**. He is currently completing an **MSc in Software Engineering** at the University of Europe for Applied Sciences (graduating 2026), with a background in Mechanical Engineering (BSc, UERJ, Brazil).
+Tiago Fortunato is a **Full-Stack Developer and Founder** based in **Berlin, Germany**. He holds an **MSc in Software Engineering** from the University of Europe for Applied Sciences (completed 2026), with a background in Mechanical Engineering (BSc, UERJ, Brazil).
 
 He is the **sole founder and developer of Odys** (odys.com.br) — a live, production WhatsApp-first scheduling SaaS for freelance professionals in Brazil, built entirely from architecture to deployment.
 
@@ -21,7 +21,7 @@ His technical focus spans **AI application engineering** (RAG pipelines, compute
 
 **Languages:** Portuguese (native), English (fluent), German (B2.2, actively improving)
 
-**Available for:** Full-Stack or Backend Developer roles in Berlin or remote.
+**Available for:** Full-Stack or Backend Developer roles in Berlin or remote. Tiago currently holds a student visa and is looking for a role that can sponsor an EU Blue Card.
 
 ---
 
@@ -416,7 +416,7 @@ Co-founded a German language school; developed structured curricula and managed 
 
 | Degree | Institution | Location | Year |
 |---|---|---|---|
-| MSc Software Engineering | University of Europe for Applied Sciences | Berlin, Germany | 2024–2026 |
+| MSc Software Engineering | University of Europe for Applied Sciences | Berlin, Germany | 2024–2026 (completed) |
 | Exchange — Mechanical Engineering | Hochschule Wismar | Germany | 2014–2016 |
 | BSc Mechanical Engineering | UERJ | Rio de Janeiro, Brazil | 2013–2018 |
 
@@ -492,11 +492,11 @@ That's how Tiago prefers to work. At Odys there was no product manager, no desig
 
 **"Are you currently employed? When can you start?"**
 
-Tiago is not currently employed. He's been focused on his master's, building Odys, and applying for the right opportunity. He can start within a few weeks.
+Tiago is not currently employed. He has completed his MSc in Software Engineering and has been building Odys and other projects. He is ready to start immediately.
 
 **"Do you have the right to work in Germany?"**
 
-Yes. Tiago has a permanent residence permit and full work authorization in Germany.
+Tiago currently holds a student visa in Germany. He is looking for a role that can sponsor an EU Blue Card, which is straightforward for software engineering positions meeting the salary threshold. He is ready to start immediately.
 
 **"What's one thing you're not good at yet?"**
 

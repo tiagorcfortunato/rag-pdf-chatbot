@@ -10,7 +10,7 @@
 Tiago Fortunato is a Product Engineer and Founder based in Berlin, Germany. He has an MSc in Software Engineering from the University of Europe for Applied Sciences (2026) and a BSc in Mechanical Engineering from UERJ in Brazil. He is the sole founder and developer of Odys, a live SaaS product. He focuses on AI-powered applications and ships products end-to-end as a single person, using AI tools (Claude Code) as a core part of his workflow. He is open to Product Engineer, AI Engineer, Solutions Engineer, or Founding Engineer roles in Berlin or remote, and is looking for EU Blue Card sponsorship.
 
 ### Tiago's Projects Summary
-Tiago has built three main projects: (1) [RAG Career Chatbot](https://github.com/tiagorcfortunato/rag-pdf-chatbot) — a production-deployed AI Career Assistant built as a Retrieval-Augmented Generation (RAG) application with streaming SSE, LangChain, ChromaDB, Groq, deployed on AWS EC2 with Docker, Nginx, and HTTPS. (2) [Inspection Management API](https://github.com/tiagorcfortunato/inspection-management-api) — a production-grade REST API with AI-powered damage classification using Groq Llama 3.2 11B Vision, JWT authentication, admin roles, and 31 Pytest integration tests running against real PostgreSQL in GitHub Actions CI. (3) [Odys](https://odys.com.br) — a WhatsApp-first scheduling SaaS built entirely solo for Brazilian freelance professionals, with Stripe payments, self-hosted Evolution API for WhatsApp reminders, multi-tenant architecture, and Supabase pg_cron.
+Tiago has built three main projects: (1) [RAG Career Chatbot](https://github.com/tiagorcfortunato/ai-career-assistant) — a production-deployed AI Career Assistant built as a Retrieval-Augmented Generation (RAG) application with streaming SSE, LangChain, ChromaDB, Groq, deployed on AWS EC2 with Docker, Nginx, and HTTPS. (2) [Inspection Management API](https://github.com/tiagorcfortunato/inspection-management-api) — a production-grade REST API with AI-powered damage classification using Groq Llama 3.2 11B Vision, JWT authentication, admin roles, and 31 Pytest integration tests running against real PostgreSQL in GitHub Actions CI. (3) [Odys](https://odys.com.br) — a WhatsApp-first scheduling SaaS built entirely solo for Brazilian freelance professionals, with Stripe payments, self-hosted Evolution API for WhatsApp reminders, multi-tenant architecture, and Supabase pg_cron.
 
 ### Tiago's Full Tech Stack
 Backend: Python, FastAPI, PostgreSQL, SQLAlchemy, Drizzle ORM, Pydantic, Alembic, JWT (python-jose + bcrypt), Pytest. AI & Machine Learning: RAG (Retrieval-Augmented Generation), LangChain, ChromaDB, Vector Search, fastembed (BAAI/bge-small-en-v1.5), Groq API (Llama 3.1 8B), YOLOv8 (Ultralytics), PyTorch, Scikit-learn, Pandas, PyMuPDF (fitz), Claude Code. Full-Stack & SaaS: TypeScript, Next.js 16 (App Router), Supabase, Stripe, Resend, Upstash Redis, Evolution API v2, Tailwind CSS + shadcn/ui. DevOps & Infrastructure: Docker, GitHub Actions CI/CD, Vercel, Railway, Render, AWS EC2, Nginx, Let's Encrypt, Git.
@@ -129,9 +129,9 @@ Python, PyTorch, YOLOv8 (Ultralytics), Scikit-learn, Pandas, Linux, GPU-accelera
 
 Tiago has built three main projects: (1) RAG Career Chatbot — AI career assistant with streaming SSE, LangChain, ChromaDB, Groq, deployed on Render. (2) Inspection Management API — REST API with AI-powered damage classification using Groq Llama 3.2 11B Vision, JWT auth, admin roles, 31 Pytest tests. (3) Odys — WhatsApp-first scheduling SaaS built entirely solo, live at odys.com.br, with Stripe payments and self-hosted WhatsApp API.
 
-### 1. [RAG Career Chatbot](https://github.com/tiagorcfortunato/rag-pdf-chatbot) (2026)
+### 1. [RAG Career Chatbot](https://github.com/tiagorcfortunato/ai-career-assistant) (2026)
 
-**Repository:** [github.com/tiagorcfortunato/rag-pdf-chatbot](https://github.com/tiagorcfortunato/rag-pdf-chatbot)
+**Repository:** [github.com/tiagorcfortunato/ai-career-assistant](https://github.com/tiagorcfortunato/ai-career-assistant)
 **Live Demo:** [chatbot.tifortunato.com](https://chatbot.tifortunato.com)
 
 A production-deployed AI Career Assistant built as a Retrieval-Augmented Generation (RAG) application. It serves as Tiago's interactive professional profile — recruiters and hiring managers can ask natural-language questions about his experience, projects, skills, and motivations, and receive accurate, sourced answers in real time with streaming responses.
@@ -547,9 +547,9 @@ Distributed systems at scale. He's built reliable systems for current load level
 
 ## Code Architecture & Key Implementation Details
 
-### [RAG Chatbot](https://github.com/tiagorcfortunato/rag-pdf-chatbot) — Key Technical Decisions
+### [RAG Chatbot](https://github.com/tiagorcfortunato/ai-career-assistant) — Key Technical Decisions
 
-The RAG Chatbot uses hybrid search combining semantic similarity (ChromaDB) with keyword matching (BM25), fused using Reciprocal Rank Fusion. Section-aware chunking analyzes font sizes via PyMuPDF to detect headings (15% larger than median = heading), preserving document structure. Responses stream token-by-token via Server-Sent Events (SSE). Knowledge base is pre-ingested at Docker build time to avoid runtime memory spikes. See full source code: [retrieval.py](https://github.com/tiagorcfortunato/rag-pdf-chatbot/blob/feature/recruiter-persona/app/services/retrieval.py), [ingestion.py](https://github.com/tiagorcfortunato/rag-pdf-chatbot/blob/feature/recruiter-persona/app/services/ingestion.py).
+The RAG Chatbot uses hybrid search combining semantic similarity (ChromaDB) with keyword matching (BM25), fused using Reciprocal Rank Fusion. Section-aware chunking analyzes font sizes via PyMuPDF to detect headings (15% larger than median = heading), preserving document structure. Responses stream token-by-token via Server-Sent Events (SSE). Knowledge base is pre-ingested at Docker build time to avoid runtime memory spikes. See full source code: [retrieval.py](https://github.com/tiagorcfortunato/ai-career-assistant/blob/feature/recruiter-persona/app/services/retrieval.py), [ingestion.py](https://github.com/tiagorcfortunato/ai-career-assistant/blob/feature/recruiter-persona/app/services/ingestion.py).
 
 ### [Inspection Management API](https://github.com/tiagorcfortunato/inspection-management-api) — Key Technical Decisions
 
@@ -592,7 +592,7 @@ Tiago deploys across multiple platforms, choosing each based on the use case:
 
 Both main projects have GitHub Actions CI/CD:
 
-**RAG Chatbot CI** (see: https://github.com/tiagorcfortunato/rag-pdf-chatbot/blob/feature/recruiter-persona/.github/workflows/ci.yml):
+**RAG Chatbot CI** (see: https://github.com/tiagorcfortunato/ai-career-assistant/blob/feature/recruiter-persona/.github/workflows/ci.yml):
 - Runs on every push/PR to main
 - Python 3.11 + Pytest
 - Tests upload, query, streaming, and health endpoints

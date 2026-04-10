@@ -13,8 +13,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 COPY tests/ ./tests/
 
-# Create directories for volumes
-RUN mkdir -p data chroma_db
+COPY data/knowledge_base.md ./data/knowledge_base.md
+
+# Pre-ingest knowledge base at build time so there's no memory spike at runtime
+RUN GROQ_API_KEY=build-placeholder python -c "\
+from app.services.ingestion import ingest_markdown; \
+from pathlib import Path; \
+doc_id, chunks = ingest_markdown(Path('data/knowledge_base.md'), 'knowledge_base.md'); \
+print(f'Pre-indexed KB: {chunks} chunks, doc_id={doc_id}')"
+
+RUN mkdir -p chroma_db
 
 EXPOSE 8000
 

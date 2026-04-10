@@ -1,7 +1,24 @@
+"""
+app/api/routes.py — HTTP API Endpoints
+
+This is the "waiter" — it receives HTTP requests, validates them, calls the right
+service, and sends back the response. It does NOT contain business logic.
+
+Endpoints:
+  POST /api/upload         → Upload a PDF, ingest it into ChromaDB
+  POST /api/query          → Ask a question, get a full JSON response
+  POST /api/query/stream   → Ask a question, get streaming SSE tokens (used by frontend)
+  GET  /api/documents      → List all indexed documents
+
+The streaming endpoint returns Server-Sent Events (SSE) — the frontend reads tokens
+one by one and renders markdown in real time, creating a ChatGPT-like experience.
+"""
+
 import shutil
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 
 from app.models.schemas import UploadResponse, QueryRequest, QueryResponse, DocumentInfo
 from app.services import ingestion, retrieval
@@ -45,6 +62,21 @@ async def query_documents(request: QueryRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/query/stream")
+async def stream_query(request: QueryRequest):
+    if not request.question.strip():
+        raise HTTPException(status_code=400, detail="Question cannot be empty.")
+    return StreamingResponse(
+        retrieval.stream_query(
+            question=request.question,
+            document_id=request.document_id,
+            history=request.history,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/documents", response_model=list[DocumentInfo])

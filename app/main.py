@@ -1,7 +1,21 @@
+"""
+app/main.py — Application Entry Point
+
+This is where the FastAPI app is created and configured. It handles:
+1. Lifespan: on startup, auto-ingests the knowledge base (if not already indexed)
+2. Keep-alive: background task pings /health every 10 min to prevent Render free tier spin-down
+3. Middleware: CORS (allows cross-origin requests), static file serving
+4. Routing: mounts the API router at /api and serves the frontend at /
+
+Think of this as the "manager" — it wires everything together but doesn't do the actual work.
+"""
+
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -12,6 +26,7 @@ from app.api.routes import router
 logger = logging.getLogger(__name__)
 
 KNOWLEDGE_BASE_PATH = Path("data/knowledge_base.md")
+# Thesis content is included in knowledge_base.md to avoid OOM on t3.micro
 
 
 def _is_already_ingested(filename: str) -> bool:
@@ -37,6 +52,19 @@ async def lifespan(app: FastAPI):
             )
     else:
         logger.warning("Knowledge base not found at '%s' — skipping auto-load.", KNOWLEDGE_BASE_PATH)
+
+    # Keep-alive: ping self every 10 min so free Render instance doesn't spin down
+    async def _keep_alive():
+        await asyncio.sleep(30)  # wait for server to finish starting
+        async with httpx.AsyncClient() as client:
+            while True:
+                try:
+                    await client.get("http://localhost:8000/health", timeout=10)
+                except Exception:
+                    pass
+                await asyncio.sleep(600)  # every 10 minutes
+
+    asyncio.create_task(_keep_alive())
     yield
 
 

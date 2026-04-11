@@ -290,16 +290,24 @@ def _build_search_query(question: str, history: list[ChatMessage]) -> str:
     return f"{context} {question}"
 
 
-def _invoke_with_fallback(chain, params: dict):
+def _is_rate_limit_error(exc: Exception) -> bool:
+    """Detect rate limit errors even when wrapped by LangChain."""
+    if isinstance(exc, RateLimitError):
+        return True
+    msg = str(exc).lower()
+    return "rate limit" in msg or "429" in msg or "rate_limit_exceeded" in msg
+
+
+def _invoke_with_fallback(chain, params: dict, prompt):
     """Invoke the LLM chain with the primary model, fall back to 8b on rate limit."""
     try:
         return chain.invoke(params)
-    except RateLimitError as e:
-        logger.warning("Primary model rate-limited, falling back to %s: %s", FALLBACK_MODEL, e)
-        # Rebuild chain with fallback model
-        prompt = chain.first
-        fallback_chain = prompt | _get_llm(FALLBACK_MODEL)
-        return fallback_chain.invoke(params)
+    except Exception as e:
+        if _is_rate_limit_error(e):
+            logger.warning("Primary model rate-limited, falling back to %s: %s", FALLBACK_MODEL, str(e)[:200])
+            fallback_chain = prompt | _get_llm(FALLBACK_MODEL)
+            return fallback_chain.invoke(params)
+        raise
 
 
 def query(question: str, document_id: str | None, history: list[ChatMessage]) -> QueryResponse:
@@ -351,7 +359,7 @@ def query(question: str, document_id: str | None, history: list[ChatMessage]) ->
         "context": context,
         "history": lc_history,
         "question": question,
-    })
+    }, prompt)
 
     # 7. Build sources
     sources = [
@@ -427,17 +435,20 @@ async def stream_query(
         async for chunk in chain.astream(params):
             if chunk.content:
                 yield f"data: {json.dumps({'token': chunk.content})}\n\n"
-    except RateLimitError as e:
-        logger.warning("Stream rate-limited on primary model, falling back: %s", e)
-        # Signal model switch to the user
-        yield f"data: {json.dumps({'token': '_(switched to faster fallback model due to rate limit)_\\n\\n'})}\n\n"
-        chain = prompt | _get_llm(FALLBACK_MODEL)
-        async for chunk in chain.astream(params):
-            if chunk.content:
-                yield f"data: {json.dumps({'token': chunk.content})}\n\n"
     except Exception as e:
-        logger.error("Stream query failed: %s", e)
-        yield f"data: {json.dumps({'token': f'Error: {str(e)[:200]}'})}\n\n"
+        if _is_rate_limit_error(e):
+            logger.warning("Stream rate-limited on primary model, falling back: %s", str(e)[:200])
+            try:
+                chain = prompt | _get_llm(FALLBACK_MODEL)
+                async for chunk in chain.astream(params):
+                    if chunk.content:
+                        yield f"data: {json.dumps({'token': chunk.content})}\n\n"
+            except Exception as e2:
+                logger.error("Fallback model also failed: %s", e2)
+                yield f"data: {json.dumps({'token': f'Both models are rate-limited. Please try again in a few minutes.'})}\n\n"
+        else:
+            logger.error("Stream query failed: %s", e)
+            yield f"data: {json.dumps({'token': f'Error: {str(e)[:200]}'})}\n\n"
 
     duration = time.time() - start
     logger.info(

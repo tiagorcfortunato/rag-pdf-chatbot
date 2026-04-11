@@ -26,6 +26,7 @@ from app.api.routes import router
 logger = logging.getLogger(__name__)
 
 KNOWLEDGE_BASE_PATH = Path("data/knowledge_base.md")
+ODYS_KNOWLEDGE_PATH = Path("data/odys_knowledge.md")
 # Thesis content is included in knowledge_base.md to avoid OOM on t3.micro
 
 
@@ -52,6 +53,19 @@ async def lifespan(app: FastAPI):
             )
     else:
         logger.warning("Knowledge base not found at '%s' — skipping auto-load.", KNOWLEDGE_BASE_PATH)
+
+    # Auto-ingest Odys deep-dive knowledge base
+    if ODYS_KNOWLEDGE_PATH.exists():
+        odys_filename = ODYS_KNOWLEDGE_PATH.name
+        if _is_already_ingested(odys_filename):
+            logger.info("Odys knowledge '%s' already indexed — skipping.", odys_filename)
+        else:
+            from app.services.ingestion import ingest_markdown
+            doc_id, chunks = ingest_markdown(ODYS_KNOWLEDGE_PATH, odys_filename)
+            logger.info(
+                "Odys knowledge loaded: '%s' → document_id=%s, chunks=%d",
+                odys_filename, doc_id, chunks,
+            )
 
     # Keep-alive: ping self every 10 min so free Render instance doesn't spin down
     async def _keep_alive():

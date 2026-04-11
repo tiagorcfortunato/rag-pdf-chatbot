@@ -72,7 +72,6 @@ def _generate_followups(question: str, answer: str) -> list[str]:
     Uses the fallback (8b) model since this is a lightweight task.
     Returns empty list on any failure — follow-ups are nice-to-have.
     """
-    logger.warning("_generate_followups CALLED with question=%r", question[:60])
     try:
         llm = _get_llm(FALLBACK_MODEL)  # always use 8b for speed/cost
         prompt = ChatPromptTemplate.from_messages([
@@ -80,12 +79,10 @@ def _generate_followups(question: str, answer: str) -> list[str]:
         ])
         chain = prompt | llm
         result = chain.invoke({"question": question, "answer": answer[:1500]})
-        logger.warning("_generate_followups RAW RESULT: %r", result.content[:300])
         lines = [line.strip().lstrip("-•*0123456789. ").rstrip("?") + "?"
                  for line in result.content.split("\n") if line.strip()]
         # Filter out any very short or very long lines
         lines = [l for l in lines if 5 < len(l) < 120]
-        logger.warning("_generate_followups PARSED: %s", lines)
         return lines[:3]
     except Exception as e:
         logger.warning("Follow-up generation failed: %s", str(e)[:300])

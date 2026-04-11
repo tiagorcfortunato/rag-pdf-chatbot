@@ -41,6 +41,7 @@ class Source(BaseModel):
 class QueryResponse(BaseModel):
     answer: str
     sources: list[Source]
+    follow_ups: list[str] = []
 
 
 class DocumentInfo(BaseModel):

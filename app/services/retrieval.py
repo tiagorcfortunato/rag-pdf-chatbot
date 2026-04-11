@@ -51,6 +51,44 @@ def _get_llm(model: str | None = None) -> ChatGroq:
     )
 
 
+FOLLOWUP_PROMPT = """You just answered this question about Tiago Fortunato:
+
+Question: {question}
+Answer: {answer}
+
+Generate exactly 3 short follow-up questions a recruiter might ask next, based on this answer.
+Rules:
+- Each question under 12 words
+- They should dig deeper into interesting details from the answer
+- Do NOT repeat the original question
+- Output ONLY the 3 questions, one per line, no numbering, no bullets, no quotes
+- No preamble or explanation
+"""
+
+
+def _generate_followups(question: str, answer: str) -> list[str]:
+    """
+    Use a small/fast LLM to generate 3 contextual follow-up questions.
+    Uses the fallback (8b) model since this is a lightweight task.
+    Returns empty list on any failure — follow-ups are nice-to-have.
+    """
+    try:
+        llm = _get_llm(FALLBACK_MODEL)  # always use 8b for speed/cost
+        prompt = ChatPromptTemplate.from_messages([
+            ("human", FOLLOWUP_PROMPT),
+        ])
+        chain = prompt | llm
+        result = chain.invoke({"question": question, "answer": answer[:1500]})
+        lines = [line.strip().lstrip("-•*0123456789. ").rstrip("?") + "?"
+                 for line in result.content.split("\n") if line.strip()]
+        # Filter out any very short or very long lines
+        lines = [l for l in lines if 5 < len(l) < 120]
+        return lines[:3]
+    except Exception as e:
+        logger.warning("Follow-up generation failed: %s", str(e)[:200])
+        return []
+
+
 SYSTEM_PROMPT = """You are the Professional Talent Assistant for Tiago Fortunato, a Software Engineer specialized in AI and Backend based in Berlin. Your goal is to help recruiters, hiring managers, and technical interviewers understand Tiago's technical depth and professional journey.
 
 Rules:
@@ -384,14 +422,17 @@ def query(question: str, document_id: str | None, history: list[ChatMessage]) ->
         for doc in results
     ]
 
-    # 8. Log for observability
+    # 8. Generate contextual follow-up questions
+    follow_ups = _generate_followups(question, response.content)
+
+    # 9. Log for observability
     duration = time.time() - start
     logger.info(
-        "Query completed in %.2fs | question=%r | chunks=%d | routed=%s",
-        duration, question[:80], len(results), bool(allowed_files),
+        "Query completed in %.2fs | question=%r | chunks=%d | routed=%s | followups=%d",
+        duration, question[:80], len(results), bool(allowed_files), len(follow_ups),
     )
 
-    return QueryResponse(answer=response.content, sources=sources)
+    return QueryResponse(answer=response.content, sources=sources, follow_ups=follow_ups)
 
 
 async def stream_query(
@@ -440,12 +481,14 @@ async def stream_query(
     ]
     yield f"data: {json.dumps({'sources': sources})}\n\n"
 
-    # Try primary model, fall back to 8b on rate limit
+    # Try primary model, fall back to 8b on rate limit. Collect full answer for follow-up gen.
     params = {"context": context, "history": lc_history, "question": question}
+    full_answer = ""
     try:
         chain = prompt | _get_llm()
         async for chunk in chain.astream(params):
             if chunk.content:
+                full_answer += chunk.content
                 yield f"data: {json.dumps({'token': chunk.content})}\n\n"
     except Exception as e:
         if _is_rate_limit_error(e):
@@ -454,13 +497,20 @@ async def stream_query(
                 chain = prompt | _get_llm(FALLBACK_MODEL)
                 async for chunk in chain.astream(params):
                     if chunk.content:
+                        full_answer += chunk.content
                         yield f"data: {json.dumps({'token': chunk.content})}\n\n"
             except Exception as e2:
                 logger.error("Fallback model also failed: %s", e2)
-                yield f"data: {json.dumps({'token': f'Both models are rate-limited. Please try again in a few minutes.'})}\n\n"
+                yield f"data: {json.dumps({'token': 'Both models are rate-limited. Please try again in a few minutes.'})}\n\n"
         else:
             logger.error("Stream query failed: %s", e)
             yield f"data: {json.dumps({'token': f'Error: {str(e)[:200]}'})}\n\n"
+
+    # After streaming, generate contextual follow-ups and send them as a final event
+    if full_answer:
+        follow_ups = _generate_followups(question, full_answer)
+        if follow_ups:
+            yield f"data: {json.dumps({'follow_ups': follow_ups})}\n\n"
 
     duration = time.time() - start
     logger.info(

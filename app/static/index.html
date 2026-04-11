@@ -481,6 +481,7 @@
 
     let fullText = '';
     let sources = [];
+    let followUps = [];
     let buffer = '';
     let bubble, sourcesEl;
 
@@ -511,6 +512,10 @@
 
           try {
             const parsed = JSON.parse(data);
+            if (parsed.follow_ups) {
+              followUps = parsed.follow_ups;
+              continue;
+            }
             if (parsed.sources) {
               sources = parsed.sources;
             }
@@ -546,12 +551,16 @@
       // Make list items that look like questions clickable
       makeItemsClickable(bubble);
 
-      // Append 5 fresh suggestion chips below this answer (random from unused pool)
-      const fresh = pickSuggestions(5);
-      if (fresh.length > 0) {
+      // Append suggestion chips below the answer.
+      // Prefer LLM-generated contextual follow-ups, then top up with random ones
+      // from the hardcoded pool to reach 5 total.
+      const freshCount = Math.max(0, 5 - followUps.length);
+      const fresh = pickSuggestions(freshCount);
+      const combined = [...followUps, ...fresh];
+      if (combined.length > 0) {
         const chipsEl = document.createElement('div');
         chipsEl.className = 'chips';
-        fresh.forEach(q => {
+        combined.forEach(q => {
           const btn = document.createElement('button');
           btn.className = 'chip';
           btn.textContent = q;

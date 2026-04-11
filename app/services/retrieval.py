@@ -290,12 +290,24 @@ def _build_search_query(question: str, history: list[ChatMessage]) -> str:
     return f"{context} {question}"
 
 
-def _is_rate_limit_error(exc: Exception) -> bool:
-    """Detect rate limit errors even when wrapped by LangChain."""
+def _is_rate_limit_error(exc: BaseException) -> bool:
+    """Detect rate limit errors even when wrapped by LangChain or ExceptionGroup."""
+    # Direct check
     if isinstance(exc, RateLimitError):
         return True
-    msg = str(exc).lower()
-    return "rate limit" in msg or "429" in msg or "rate_limit_exceeded" in msg
+    # ExceptionGroup (Python 3.11+) — recursively check sub-exceptions
+    if hasattr(exc, "exceptions"):
+        return any(_is_rate_limit_error(sub) for sub in exc.exceptions)
+    # Check __cause__ and __context__ chain
+    if exc.__cause__ is not None and _is_rate_limit_error(exc.__cause__):
+        return True
+    if exc.__context__ is not None and _is_rate_limit_error(exc.__context__):
+        return True
+    # Fall back to string matching on the full traceback
+    import traceback
+    tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+    tb_lower = tb.lower()
+    return "rate limit" in tb_lower or "429" in tb or "rate_limit_exceeded" in tb_lower
 
 
 def _invoke_with_fallback(chain, params: dict, prompt):

@@ -42,7 +42,7 @@ Rules:
 - If the context does not contain enough information to fully answer the question, clearly state what you know from the context and what you don't. NEVER fill gaps with assumptions or general knowledge. Saying "I don't have that specific information" is better than guessing.
 - Do NOT add generic advice, industry best practices, or common knowledge that is not in the context. Every sentence in your response should be traceable to a specific part of the context.
 - ALWAYS respond in English by default. Only switch to another language if the user explicitly writes their question in that language (Portuguese, German, etc.).
-- The context chunks may be labeled with subsection titles — they all pertain to Tiago's profile.
+- Each context chunk starts with a [SOURCE: PROJECT NAME] label telling you which project it belongs to. CRITICAL: when a question asks about a specific project (e.g., "Tell me about Odys"), ONLY use chunks whose source matches that project. NEVER attribute features or technical details from one project to another. For example, features of the RAG Career Chatbot must never be described as features of Odys or the Inspection API, and vice versa.
 - If you genuinely don't have the information, say so briefly and pivot to a related strength Tiago does have. You may suggest follow-up questions, but ONLY ones that highlight Tiago's strengths.
 - Emphasize the Inspection Management API and the RAG Chatbot as core technical proofs of his work.
 - When mentioning URLs or GitHub links, ALWAYS format them as markdown links: [display text](https://full-url). Never write raw URLs as plain text.
@@ -181,6 +181,25 @@ def _get_vector_store() -> Chroma:
     )
 
 
+def _format_context(results: list[dict]) -> str:
+    """
+    Format retrieved chunks with clear project labels so the LLM knows
+    which project each chunk belongs to and doesn't mix up features.
+    """
+    file_to_project = {
+        "knowledge_base.md": "GENERAL PROFILE",
+        "odys_knowledge.md": "ODYS (SaaS product)",
+        "rag_chatbot_knowledge.md": "RAG CAREER CHATBOT (this chatbot)",
+        "inspection_api_knowledge.md": "INSPECTION MANAGEMENT API",
+    }
+    formatted = []
+    for doc in results:
+        filename = doc["metadata"].get("filename", "unknown")
+        project = file_to_project.get(filename, filename)
+        formatted.append(f"[SOURCE: {project}]\n{doc['content']}")
+    return "\n\n---\n\n".join(formatted)
+
+
 def _build_search_query(question: str, history: list[ChatMessage]) -> str:
     """
     If there's conversation history AND the query is short/ambiguous,
@@ -211,8 +230,8 @@ def query(question: str, document_id: str | None, history: list[ChatMessage]) ->
             sources=[],
         )
 
-    # 3. Build context string from retrieved chunks
-    context = "\n\n---\n\n".join([doc["content"] for doc in results])
+    # 3. Build context string from retrieved chunks with project labels
+    context = _format_context(results)
 
     # 4. Build prompt with history support
     prompt = ChatPromptTemplate.from_messages([
@@ -269,7 +288,7 @@ async def stream_query(
         yield "data: [DONE]\n\n"
         return
 
-    context = "\n\n---\n\n".join([doc["content"] for doc in results])
+    context = _format_context(results)
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", SYSTEM_PROMPT),

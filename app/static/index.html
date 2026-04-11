@@ -244,31 +244,36 @@
 
     /* ── Story mode ─────────────────────────────────────────────────── */
     .story-header {
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .story-header-row {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 12px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
     }
     .story-emoji {
-      font-size: 22px;
+      font-size: 20px;
+      flex-shrink: 0;
     }
     .story-title {
       flex: 1;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--muted);
+      min-width: 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
       text-transform: uppercase;
-      letter-spacing: 0.4px;
+      letter-spacing: 0.6px;
     }
     .story-progress {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--muted);
       white-space: nowrap;
+      font-weight: 600;
     }
     .story-progress-bar {
-      margin-top: 4px;
       height: 4px;
       width: 100%;
       background: var(--border);
@@ -570,14 +575,40 @@
   // ── Init ────────────────────────────────────────────────────────────────────
 
   window.addEventListener('DOMContentLoaded', () => {
-    if (conversationHistory.length > 0) {
+    // Check for an active story tour first — if the user was mid-tour,
+    // resume them at the same step instead of showing plain-text restore.
+    let activeStory = null;
+    try {
+      const raw = localStorage.getItem('tiago_chatbot_story_v1');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Only resume if it was less than 24 hours ago and the story still exists
+        if (parsed && STORIES[parsed.storyKey] &&
+            typeof parsed.stepIndex === 'number' &&
+            Date.now() - parsed.timestamp < 86400000) {
+          activeStory = parsed;
+        } else {
+          localStorage.removeItem('tiago_chatbot_story_v1');
+        }
+      }
+    } catch (_) {
+      localStorage.removeItem('tiago_chatbot_story_v1');
+    }
+
+    if (activeStory) {
+      const story = STORIES[activeStory.storyKey];
+      addBotMessage(
+        `Welcome back! You were in the middle of the **${story.title}** tour. Resuming at step ${activeStory.stepIndex + 1}...`,
+        [],
+        false
+      );
+      renderStoryStep(activeStory.storyKey, activeStory.stepIndex);
+    } else if (conversationHistory.length > 0) {
       // Restore previous conversation
       conversationHistory.forEach(msg => {
         if (msg.role === 'user') addUserMessage(msg.content);
         else addBotMessage(msg.content, [], false);
       });
-      // Add a small hint that it's restored — random chips since they've
-      // already interacted before
       addBotMessage(
         "_(Restored from your previous session. Ask another question or use the suggestions below.)_",
         [],
@@ -635,15 +666,15 @@
     const totalSteps = story.steps.length;
     const progressPct = Math.round(((stepIndex + 1) / totalSteps) * 100);
 
-    // Header: emoji + story title + step counter + progress bar
+    // Header: row 1 has emoji + story title + step counter, row 2 has progress bar
     const headerHtml = `
       <div class="story-header">
-        <span class="story-emoji">${story.emoji || '📖'}</span>
-        <div style="flex:1; min-width:0;">
+        <div class="story-header-row">
+          <span class="story-emoji">${story.emoji || '📖'}</span>
           <div class="story-title">${escapeHtml(story.title)}</div>
-          <div class="story-progress-bar"><div class="story-progress-fill" style="width:${progressPct}%;"></div></div>
+          <span class="story-progress">Step ${stepIndex + 1} / ${totalSteps}</span>
         </div>
-        <span class="story-progress">Step ${stepIndex + 1} / ${totalSteps}</span>
+        <div class="story-progress-bar"><div class="story-progress-fill" style="width:${progressPct}%;"></div></div>
       </div>
     `;
 
@@ -711,16 +742,20 @@
     msgs.appendChild(wrap);
     scrollToBottom();
 
-    // Persist the story step so if the user refreshes mid-tour they see it
-    conversationHistory.push({
-      role: 'assistant',
-      content: `**${step.title}**\n\n${step.content}`,
-    });
-    saveConversation(conversationHistory);
+    // Track the current story position separately so we can resume on refresh
+    // without polluting conversation_history with raw step markdown.
+    try {
+      localStorage.setItem('tiago_chatbot_story_v1', JSON.stringify({
+        storyKey,
+        stepIndex,
+        timestamp: Date.now(),
+      }));
+    } catch (_) {}
   }
 
   function exitStoryMode(storyKey) {
     const story = STORIES[storyKey];
+    try { localStorage.removeItem('tiago_chatbot_story_v1'); } catch (_) {}
     addBotMessage(
       `That's the full story of **${story.title}**. Want to explore more? Ask me anything, or try one of these:`,
       [],
@@ -980,6 +1015,7 @@
     conversationHistory = [];
     usedSuggestions.clear();
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('tiago_chatbot_story_v1');
     document.getElementById('messages').innerHTML = '';
     addBotMessage(
       "Hi! I'm Tiago's career assistant.\n\nAsk me anything about his experience, projects, or technical skills — or pick one of the suggestions below to get started.",

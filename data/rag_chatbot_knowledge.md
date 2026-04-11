@@ -4,6 +4,38 @@
 
 ---
 
+## How This Chatbot Was Built — The Story
+
+This is the making-of story for the AI Career Assistant. When someone asks "walk me through how this was built" or "how did you make this chatbot", respond with this narrative in a conversational, first-person tone (as if Tiago is telling the story).
+
+**The starting point.** It began as a generic RAG PDF chatbot — upload any PDF, ask questions about it. A standard "RAG 101" project. But Tiago realized he had a stronger use case: turn it into his own interactive career assistant. Recruiters could ask about his experience instead of reading a static CV.
+
+**The pivot.** The first big change was the knowledge base. Instead of ingesting random PDFs, Tiago wrote structured markdown files documenting his projects, background, and technical decisions. He also rewrote the system prompt with a Professional Talent Assistant persona focused on recruiters.
+
+**The first deploy (Render).** The chatbot went live on Render's free tier. Fast to set up, free, worked. But two problems: (1) Render spins down after 15 minutes of inactivity, meaning 50-second cold starts for the first visitor; (2) Tiago wanted to show AWS experience on his portfolio.
+
+**The AWS migration.** Tiago moved the chatbot to AWS EC2 (t3.micro). This meant setting up Docker, Nginx reverse proxy, Let's Encrypt SSL, custom domain (chatbot.tifortunato.com via Namecheap DNS), and an Elastic IP so the address wouldn't change on restart. All manual — no managed service hiding the complexity. This was deliberate: the point was to learn production infrastructure, not just to deploy.
+
+**The retrieval problem.** Early answers were hit-or-miss. When asked "what's your tech stack?", the chatbot sometimes missed relevant chunks. The fix was hybrid search — combining semantic search (ChromaDB embeddings) with keyword search (BM25), fused via Reciprocal Rank Fusion. Semantic search alone missed exact terms like "FastAPI"; BM25 alone missed synonyms. Together, they cover both.
+
+**The cross-project confusion.** Once Tiago added separate knowledge base files for Odys, the Inspection API, and the RAG chatbot itself, a new problem emerged: the LLM would attribute Odys features to the RAG chatbot or vice versa because the retrieved chunks didn't tell it which project they belonged to. The fix was two-fold: (1) prefix each retrieved chunk with a `[SOURCE: PROJECT NAME]` label so the LLM sees explicit project boundaries; (2) add query routing — a keyword-based classifier that, when the question clearly targets one project, filters retrieval to only that project's chunks.
+
+**The memory problem.** The t3.micro has only 1GB RAM. Every attempt to make the chatbot "better" (larger embeddings, more chunks, ingesting a 3MB thesis PDF) hit OOM errors during Docker build. The solution was a combination of: pre-ingesting the knowledge base at Docker build time (so runtime startup was cheap), adding 1GB of swap space, and mounting ChromaDB as a persistent volume so container restarts don't re-ingest.
+
+**The model upgrade.** The chatbot started on Llama 3.1 8B — fast but a bit shallow. Tiago upgraded to Llama 3.3 70B (also free on Groq, just with tighter rate limits). Responses became noticeably richer. Then he added automatic model fallback: if the 70B hits its daily rate limit, the chatbot silently switches to 8B so users never see errors.
+
+**The evaluation pipeline.** To measure improvements objectively, Tiago built a RAGAS evaluation script. It queries the live chatbot with 10 test questions and scores the answers using Google's Gemini as the judge — a different model than the chatbot uses, to avoid self-evaluation bias. The metrics are faithfulness, answer relevancy, context precision, and context recall. Running RAGAS after each change showed which changes actually helped and which were noise.
+
+**The UX polish.** Small details that make a big difference: streaming responses via SSE so text appears word-by-word like ChatGPT; conversation persistence in localStorage so recruiters can close the tab and come back later; a curated set of entry questions on the welcome screen (broad, welcoming) that transition to LLM-generated contextual follow-ups after the first interaction; links open in a new tab; markdown rendering with project-specific formatting.
+
+**The follow-up system.** After each answer, a separate Groq call uses the fast 8B model to generate 3 contextual follow-up questions based on what was just discussed. These replace the static suggestions with questions that actually make sense for where the conversation is. Generic questions get specific follow-ups.
+
+**The lesson.** The hardest part wasn't any single feature — it was learning when to stop adding features. Every improvement cycle had diminishing returns, and the RAGAS scores plateaued around 0.52 because Llama 8B hits a ceiling. Tiago learned to ship what works rather than chase scores, and to measure before optimizing. Most of the time he "improved" things without measuring, some of those changes hurt the scores.
+
+**The takeaway for a recruiter.** This project shows: end-to-end product thinking (not just training a model), infrastructure work (Docker, Nginx, SSL, DNS, AWS), retrieval engineering (hybrid search, query routing, chunking), production LLM orchestration (streaming, fallback, rate limits), systematic evaluation (RAGAS with a separate judge), and attention to UX (entry points, persistence, contextual follow-ups).
+
+---
+
 ## What It Is
 
 The AI Career Assistant is a production-deployed Retrieval-Augmented Generation (RAG) chatbot that acts as Tiago Fortunato's interactive professional profile. Recruiters and hiring managers can ask natural-language questions about his experience, projects, and skills, and receive accurate, sourced answers in real time with streaming responses.

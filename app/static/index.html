@@ -385,6 +385,20 @@
   }
 
   let conversationHistory = loadConversation();
+
+  // ── Entry questions (fixed, shown only on the welcome screen) ───────────
+  // These are deliberately broad and welcoming — a funnel from "who is he"
+  // → projects → depth. Never random on first render, always the same 5
+  // so first impression is curated, not overwhelming.
+  const ENTRY_SUGGESTIONS = [
+    "Tell me about yourself",
+    "What projects has Tiago built?",
+    "What is his full tech stack?",
+    "Walk me through how this chatbot was built",
+    "What does founder-level ownership mean to him?",
+  ];
+
+  // Pool used after the first interaction, mixed with LLM-generated follow-ups
   const SUGGESTIONS_POOL = [
     // General
     "Tell me about yourself",
@@ -444,17 +458,21 @@
         if (msg.role === 'user') addUserMessage(msg.content);
         else addBotMessage(msg.content, [], false);
       });
-      // Add a small hint that it's restored
+      // Add a small hint that it's restored — random chips since they've
+      // already interacted before
       addBotMessage(
         "_(Restored from your previous session. Ask another question or use the suggestions below.)_",
         [],
-        true
+        true,
+        false  // random chips
       );
     } else {
+      // First visit — show the curated entry chips
       addBotMessage(
-        "Hi! I'm Tiago's career assistant.\n\nAsk me anything about his experience, projects, or technical skills — I'm here to help you get to know him better.",
+        "Hi! I'm Tiago's career assistant.\n\nAsk me anything about his experience, projects, or technical skills — or pick one of the suggestions below to get started.",
         [],
-        true  // show chips
+        true,  // show chips
+        true   // use fixed entry chips
       );
     }
     document.getElementById('questionInput').focus();
@@ -606,7 +624,7 @@
     scrollToBottom();
   }
 
-  function addBotMessage(text, sources = [], withChips = false) {
+  function addBotMessage(text, sources = [], withChips = false, useEntryChips = false) {
     const msgs = document.getElementById('messages');
     const wrap = document.createElement('div');
     wrap.className = 'message bot';
@@ -615,8 +633,11 @@
       ? `<div class="sources">${sources.map(s => `<span class="source-tag">${escapeHtml(s.section)}</span>`).join('')}</div>`
       : '';
 
+    // On the first render of the welcome message, show the curated entry
+    // suggestions. After the first interaction, random from the pool.
+    const questions = useEntryChips ? ENTRY_SUGGESTIONS : pickSuggestions(5);
     const chipsHtml = withChips
-      ? `<div class="chips">${pickSuggestions(5).map(q => `<button class="chip" onclick="sendQuestion('${escapeHtml(q)}')">${escapeHtml(q)}</button>`).join('')}</div>`
+      ? `<div class="chips">${questions.map(q => `<button class="chip" onclick="sendQuestion('${escapeHtml(q)}')">${escapeHtml(q)}</button>`).join('')}</div>`
       : '';
 
     wrap.innerHTML = `
@@ -698,9 +719,10 @@
     localStorage.removeItem(STORAGE_KEY);
     document.getElementById('messages').innerHTML = '';
     addBotMessage(
-      "Hi! I'm Tiago's career assistant.\n\nAsk me anything about his experience, projects, or technical skills — I'm here to help you get to know him better.",
+      "Hi! I'm Tiago's career assistant.\n\nAsk me anything about his experience, projects, or technical skills — or pick one of the suggestions below to get started.",
       [],
-      true
+      true,
+      true  // fresh start = entry chips
     );
     document.getElementById('questionInput').focus();
   }

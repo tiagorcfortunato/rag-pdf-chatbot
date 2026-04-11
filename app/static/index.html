@@ -317,6 +317,24 @@
       overflow-x: auto;
       margin-top: 12px;
       white-space: pre;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-color: #475569 #0f172a;
+    }
+    .story-code-block::-webkit-scrollbar { height: 6px; }
+    .story-code-block::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+    @media (max-width: 600px) {
+      .story-code-block {
+        font-size: 11px;
+        padding: 12px 14px;
+      }
+      .story-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .story-btn {
+        width: 100%;
+        text-align: center;
+      }
     }
     .story-actions {
       display: flex;
@@ -687,6 +705,7 @@
 
     // Action buttons
     const isLast = stepIndex === totalSteps - 1;
+    const isFirst = stepIndex === 0;
     const actionsContainer = document.createElement('div');
     actionsContainer.className = 'story-actions';
 
@@ -714,6 +733,18 @@
       askBtn.textContent = '💬 Ask the AI about this';
       askBtn.onclick = () => sendQuestion(step.learnMore);
       actionsContainer.appendChild(askBtn);
+    }
+
+    // Previous button (only on step 2+)
+    if (!isFirst) {
+      const backBtn = document.createElement('button');
+      backBtn.className = 'story-btn';
+      backBtn.textContent = '← Back';
+      backBtn.onclick = () => {
+        actionsContainer.remove();
+        renderStoryStep(storyKey, stepIndex - 1);
+      };
+      actionsContainer.appendChild(backBtn);
     }
 
     if (!isLast) {
@@ -752,6 +783,30 @@
       }));
     } catch (_) {}
   }
+
+  // Keyboard shortcuts: Left/Right arrow for back/continue when focus isn't in input
+  document.addEventListener('keydown', (e) => {
+    const focused = document.activeElement;
+    if (focused && (focused.tagName === 'TEXTAREA' || focused.tagName === 'INPUT')) return;
+
+    const actionsContainers = document.querySelectorAll('.story-actions');
+    if (actionsContainers.length === 0) return;
+    const lastActions = actionsContainers[actionsContainers.length - 1];
+
+    if (e.key === 'ArrowRight') {
+      const next = lastActions.querySelector('.story-btn.primary');
+      if (next) { e.preventDefault(); next.click(); }
+    } else if (e.key === 'ArrowLeft') {
+      const buttons = lastActions.querySelectorAll('.story-btn');
+      for (const b of buttons) {
+        if (b.textContent.trim().startsWith('←')) {
+          e.preventDefault();
+          b.click();
+          break;
+        }
+      }
+    }
+  });
 
   function exitStoryMode(storyKey) {
     const story = STORIES[storyKey];

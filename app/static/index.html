@@ -677,9 +677,14 @@
     const step = story.steps[stepIndex];
     if (!step) return;
 
+    // Slideshow mode: remove any existing story step messages before rendering
+    // the new one. Users navigate via Continue/Back, not by scrolling through
+    // a stack of step bubbles.
+    document.querySelectorAll('.message.bot.story-step-msg').forEach(el => el.remove());
+
     const msgs = document.getElementById('messages');
     const wrap = document.createElement('div');
-    wrap.className = 'message bot';
+    wrap.className = 'message bot story-step-msg';
 
     const totalSteps = story.steps.length;
     const progressPct = Math.round(((stepIndex + 1) / totalSteps) * 100);
@@ -740,10 +745,7 @@
       const backBtn = document.createElement('button');
       backBtn.className = 'story-btn';
       backBtn.textContent = '← Back';
-      backBtn.onclick = () => {
-        actionsContainer.remove();
-        renderStoryStep(storyKey, stepIndex - 1);
-      };
+      backBtn.onclick = () => renderStoryStep(storyKey, stepIndex - 1);
       actionsContainer.appendChild(backBtn);
     }
 
@@ -751,11 +753,7 @@
       const continueBtn = document.createElement('button');
       continueBtn.className = 'story-btn primary';
       continueBtn.textContent = '→ Continue';
-      continueBtn.onclick = () => {
-        // Remove buttons from current step so only one set is active
-        actionsContainer.remove();
-        renderStoryStep(storyKey, stepIndex + 1);
-      };
+      continueBtn.onclick = () => renderStoryStep(storyKey, stepIndex + 1);
       actionsContainer.appendChild(continueBtn);
     } else {
       const doneBtn = document.createElement('button');
